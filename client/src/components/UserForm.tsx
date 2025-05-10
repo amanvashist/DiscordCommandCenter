@@ -30,7 +30,6 @@ export default function UserForm({ user, onCancel, onSave }: UserFormProps) {
       ...user
     } : {
       username: "",
-      discordId: "",
       apiKey: "",
       model: "poppy-v1",
       temperature: "0.7",
@@ -133,16 +132,13 @@ export default function UserForm({ user, onCancel, onSave }: UserFormProps) {
               
               <div className="mb-4">
                 <label className="block text-discord-light text-sm font-medium mb-2">
-                  Discord ID
+                  Username Description
                 </label>
                 <input 
                   type="text" 
                   className="bg-discord-darkest w-full px-3 py-2 rounded-md border border-gray-700 focus:border-discord-blue focus:outline-none text-discord-lighter"
-                  {...form.register("discordId")}
+                  placeholder="Optional description or note about this user"
                 />
-                {form.formState.errors.discordId && (
-                  <p className="text-discord-red text-sm mt-1">{form.formState.errors.discordId.message}</p>
-                )}
               </div>
               
               <div className="mb-4">

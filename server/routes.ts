@@ -144,12 +144,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const botUserData = insertBotUserSchema.parse(req.body);
       
-      // Check if a user with this Discord ID already exists
-      const existingUser = await storage.getBotUserByDiscordId(botUserData.discordId);
+      // Check if a user with this username already exists
+      const existingUser = await storage.getBotUserByUsername(botUserData.username);
       if (existingUser) {
         return res.status(400).json({ 
           success: false, 
-          message: "A user with this Discord ID already exists" 
+          message: "A user with this username already exists" 
         });
       }
       
@@ -174,13 +174,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request data (partial update allowed)
       const botUserData = insertBotUserSchema.partial().parse(req.body);
       
-      // Check if discord ID is being updated and if it already exists
-      if (botUserData.discordId) {
-        const existingUser = await storage.getBotUserByDiscordId(botUserData.discordId);
+      // Check if username is being updated and if it already exists
+      if (botUserData.username) {
+        const existingUser = await storage.getBotUserByUsername(botUserData.username);
         if (existingUser && existingUser.id !== id) {
           return res.status(400).json({ 
             success: false, 
-            message: "A user with this Discord ID already exists" 
+            message: "A user with this username already exists" 
           });
         }
       }
