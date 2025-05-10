@@ -233,7 +233,9 @@ export class FileSystemStorage implements IStorage {
     
     // Ensure all required fields have values
     const botUserWithDefaults = {
-      model: insertBotUser.model ?? "poppy-v1",
+      boardId: insertBotUser.boardId ?? "",
+      chatId: insertBotUser.chatId ?? "",
+      model: insertBotUser.model ?? "claude-3-7-sonnet-20250219",
       temperature: insertBotUser.temperature ?? "0.7",
       maxTokens: insertBotUser.maxTokens ?? 1024,
       isActive: insertBotUser.isActive ?? true,
@@ -267,7 +269,9 @@ export class FileSystemStorage implements IStorage {
       
       // Ensure all required fields have values when updating
       const updateWithDefaults = {
-        model: updates.model ?? existingUser.model ?? "poppy-v1",
+        boardId: updates.boardId ?? existingUser.boardId ?? "",
+        chatId: updates.chatId ?? existingUser.chatId ?? "",
+        model: updates.model ?? existingUser.model ?? "claude-3-7-sonnet-20250219",
         temperature: updates.temperature ?? existingUser.temperature ?? "0.7",
         maxTokens: updates.maxTokens ?? existingUser.maxTokens ?? 1024,
         isActive: updates.isActive ?? existingUser.isActive ?? true,

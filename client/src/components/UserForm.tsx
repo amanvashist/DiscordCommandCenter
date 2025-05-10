@@ -210,15 +210,47 @@ export default function UserForm({ user, onCancel, onSave }: UserFormProps) {
               
               <div className="mb-4">
                 <label className="block text-discord-light text-sm font-medium mb-2">
+                  Board ID
+                </label>
+                <input 
+                  type="text" 
+                  className="bg-discord-darkest w-full px-3 py-2 rounded-md border border-gray-700 focus:border-discord-blue focus:outline-none text-discord-lighter"
+                  placeholder="small-wood-qk34F"
+                  {...form.register("boardId")}
+                />
+                {form.formState.errors.boardId && (
+                  <p className="text-discord-red text-sm mt-1">{form.formState.errors.boardId.message}</p>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-discord-light text-sm font-medium mb-2">
+                  Chat ID
+                </label>
+                <input 
+                  type="text" 
+                  className="bg-discord-darkest w-full px-3 py-2 rounded-md border border-gray-700 focus:border-discord-blue focus:outline-none text-discord-lighter"
+                  placeholder="chatNode-long-earth-WgsET"
+                  {...form.register("chatId")}
+                />
+                {form.formState.errors.chatId && (
+                  <p className="text-discord-red text-sm mt-1">{form.formState.errors.chatId.message}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-discord-light text-sm font-medium mb-2">
                   Model
                 </label>
                 <select 
                   className="bg-discord-darkest w-full px-3 py-2 rounded-md border border-gray-700 focus:border-discord-blue focus:outline-none text-discord-lighter"
                   {...form.register("model")}
                 >
-                  <option value="poppy-v1">poppy-v1</option>
-                  <option value="poppy-v2">poppy-v2</option>
-                  <option value="poppy-pro">poppy-pro</option>
+                  <option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet</option>
+                  <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
+                  <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                  <option value="gpt-4o">GPT-4o</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
                 </select>
               </div>
               
