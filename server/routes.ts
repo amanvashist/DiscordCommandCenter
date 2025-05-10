@@ -71,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: {
           id: user.id,
           username: user.username,
-          isAdmin: user.isAdmin
+          isAdmin: user.isAdmin ?? false
         }
       });
     } catch (error) {

@@ -123,7 +123,7 @@ export async function initializeBot(token: string, storage: IStorage) {
             return;
           }
           
-          const question = interaction.options.getString('question');
+          const question = interaction.options.get('question')?.value as string;
           await interaction.deferReply();
           
           const answer = await callPoppyAPI(question!, userConfig);
@@ -139,7 +139,7 @@ export async function initializeBot(token: string, storage: IStorage) {
             return;
           }
           
-          const threadName = interaction.options.getString('thread');
+          const threadName = interaction.options.get('thread')?.value as string;
           await interaction.deferReply();
           
           // In a real app, we would fetch the actual thread's messages
