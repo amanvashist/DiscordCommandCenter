@@ -1,0 +1,12 @@
+{
+  "id": 2,
+  "username": "AliceSmith",
+  "apiKey": "poppy-api-key-2",
+  "model": "poppy-v2",
+  "temperature": "0.5",
+  "maxTokens": 2048,
+  "isActive": true,
+  "role": "Moderator",
+  "canUseAsk": true,
+  "canUseSummary": true
+}

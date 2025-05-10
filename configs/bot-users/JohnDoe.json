@@ -1,0 +1,12 @@
+{
+  "id": 1,
+  "username": "JohnDoe",
+  "apiKey": "poppy-api-key-1",
+  "model": "poppy-v1",
+  "temperature": "0.7",
+  "maxTokens": 1024,
+  "isActive": true,
+  "role": "Admin",
+  "canUseAsk": true,
+  "canUseSummary": true
+}
