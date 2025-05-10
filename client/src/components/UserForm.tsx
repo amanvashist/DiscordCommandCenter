@@ -44,7 +44,7 @@ export default function UserForm({ user, onCancel, onSave }: UserFormProps) {
   // Update form when user prop changes
   useEffect(() => {
     if (user) {
-      setTemperature(user.temperature);
+      setTemperature(user.temperature || "0.7");
       form.reset({
         ...user
       });

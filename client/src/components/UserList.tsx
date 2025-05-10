@@ -104,7 +104,7 @@ export default function UserList({ users, isLoading, onEdit }: UserListProps) {
             <thead>
               <tr className="bg-discord-darker text-discord-light text-left">
                 <th className="p-4 font-medium">Username</th>
-                <th className="p-4 font-medium">Role</th>
+                <th className="p-4 font-medium">Model</th>
                 <th className="p-4 font-medium">API Key</th>
                 <th className="p-4 font-medium">Status</th>
                 <th className="p-4 font-medium">Actions</th>
@@ -123,7 +123,7 @@ export default function UserList({ users, isLoading, onEdit }: UserListProps) {
                         <div className="text-sm text-discord-light">{user.role}</div>
                       </div>
                     </td>
-                    <td className="p-4 text-discord-lighter">{user.role}</td>
+                    <td className="p-4 text-discord-lighter">{user.model}</td>
                     <td className="p-4 text-discord-lighter">
                       <span className="bg-discord-darkest px-2 py-1 rounded text-sm">••••••••••••</span>
                     </td>
