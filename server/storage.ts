@@ -100,6 +100,10 @@ export class FileSystemStorage implements IStorage {
       const filePath = path.join(this.usersDir, `${username}.json`);
       if (fs.existsSync(filePath)) {
         const userData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        // Ensure all required fields are present
+        if (userData.isAdmin === undefined) {
+          userData.isAdmin = false;
+        }
         return userData as User;
       }
     } catch (error) {
@@ -110,7 +114,14 @@ export class FileSystemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
+    
+    // Ensure required fields have values
+    const userWithDefaults = {
+      ...insertUser,
+      isAdmin: insertUser.isAdmin ?? false
+    };
+    
+    const user: User = { ...userWithDefaults, id };
     
     try {
       const filePath = path.join(this.usersDir, `${user.username}.json`);
@@ -132,7 +143,18 @@ export class FileSystemStorage implements IStorage {
           const filePath = path.join(this.botUsersDir, file);
           const botUserData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
           if (botUserData.id === id) {
-            return botUserData as BotUser;
+            // Ensure all required fields have values
+            const botUserWithDefaults = {
+              model: botUserData.model ?? "poppy-v1",
+              temperature: botUserData.temperature ?? "0.7",
+              maxTokens: botUserData.maxTokens ?? 1024,
+              isActive: botUserData.isActive ?? true,
+              role: botUserData.role ?? "User",
+              canUseAsk: botUserData.canUseAsk ?? true,
+              canUseSummary: botUserData.canUseSummary ?? true,
+              ...botUserData
+            };
+            return botUserWithDefaults as BotUser;
           }
         }
       }
@@ -147,7 +169,20 @@ export class FileSystemStorage implements IStorage {
       const filePath = path.join(this.botUsersDir, `${username}.json`);
       if (fs.existsSync(filePath)) {
         const botUserData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        return botUserData as BotUser;
+        
+        // Ensure all required fields have values
+        const botUserWithDefaults = {
+          model: botUserData.model ?? "poppy-v1",
+          temperature: botUserData.temperature ?? "0.7",
+          maxTokens: botUserData.maxTokens ?? 1024,
+          isActive: botUserData.isActive ?? true,
+          role: botUserData.role ?? "User",
+          canUseAsk: botUserData.canUseAsk ?? true,
+          canUseSummary: botUserData.canUseSummary ?? true,
+          ...botUserData
+        };
+        
+        return botUserWithDefaults as BotUser;
       }
     } catch (error) {
       console.error('Error getting bot user by username:', error);
@@ -164,7 +199,20 @@ export class FileSystemStorage implements IStorage {
         if (file.endsWith('.json')) {
           const filePath = path.join(this.botUsersDir, file);
           const botUserData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-          botUsers.push(botUserData as BotUser);
+          
+          // Ensure all required fields have values
+          const botUserWithDefaults = {
+            model: botUserData.model ?? "poppy-v1",
+            temperature: botUserData.temperature ?? "0.7",
+            maxTokens: botUserData.maxTokens ?? 1024,
+            isActive: botUserData.isActive ?? true,
+            role: botUserData.role ?? "User",
+            canUseAsk: botUserData.canUseAsk ?? true,
+            canUseSummary: botUserData.canUseSummary ?? true,
+            ...botUserData
+          };
+          
+          botUsers.push(botUserWithDefaults as BotUser);
         }
       }
     } catch (error) {
@@ -176,7 +224,20 @@ export class FileSystemStorage implements IStorage {
   
   async createBotUser(insertBotUser: InsertBotUser): Promise<BotUser> {
     const id = this.botUserIdCounter++;
-    const botUser: BotUser = { ...insertBotUser, id };
+    
+    // Ensure all required fields have values
+    const botUserWithDefaults = {
+      model: insertBotUser.model ?? "poppy-v1",
+      temperature: insertBotUser.temperature ?? "0.7",
+      maxTokens: insertBotUser.maxTokens ?? 1024,
+      isActive: insertBotUser.isActive ?? true,
+      role: insertBotUser.role ?? "User",
+      canUseAsk: insertBotUser.canUseAsk ?? true,
+      canUseSummary: insertBotUser.canUseSummary ?? true,
+      ...insertBotUser
+    };
+    
+    const botUser: BotUser = { ...botUserWithDefaults, id };
     
     try {
       const filePath = path.join(this.botUsersDir, `${botUser.username}.json`);
@@ -198,8 +259,20 @@ export class FileSystemStorage implements IStorage {
       // If username is being updated, we need to rename the file
       const oldFilePath = path.join(this.botUsersDir, `${existingUser.username}.json`);
       
+      // Ensure all required fields have values when updating
+      const updateWithDefaults = {
+        model: updates.model ?? existingUser.model ?? "poppy-v1",
+        temperature: updates.temperature ?? existingUser.temperature ?? "0.7",
+        maxTokens: updates.maxTokens ?? existingUser.maxTokens ?? 1024,
+        isActive: updates.isActive ?? existingUser.isActive ?? true,
+        role: updates.role ?? existingUser.role ?? "User",
+        canUseAsk: updates.canUseAsk ?? existingUser.canUseAsk ?? true,
+        canUseSummary: updates.canUseSummary ?? existingUser.canUseSummary ?? true,
+        ...updates
+      };
+      
       // Update the user data
-      const updatedUser: BotUser = { ...existingUser, ...updates };
+      const updatedUser: BotUser = { ...existingUser, ...updateWithDefaults };
       
       if (updates.username && updates.username !== existingUser.username) {
         // Delete old file
