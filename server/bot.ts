@@ -91,8 +91,9 @@ export async function initializeBot(token: string, storage: IStorage) {
     client.on(Events.InteractionCreate, async (interaction) => {
       if (!interaction.isCommand()) return;
       
-      // Get the user configuration
-      const userConfig = await storage.getBotUserByDiscordId(interaction.user.id);
+      // Get the user configuration by Discord username
+      const username = interaction.user.username;
+      const userConfig = await storage.getBotUserByUsername(username);
       
       if (!userConfig) {
         await interaction.reply({ 

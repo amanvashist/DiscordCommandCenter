@@ -11,8 +11,7 @@ export const users = pgTable("users", {
 
 export const botUsers = pgTable("bot_users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull(),
-  discordId: text("discord_id").notNull().unique(),
+  username: text("username").notNull().unique(),
   apiKey: text("api_key").notNull(),
   model: text("model").default("poppy-v1"),
   temperature: text("temperature").default("0.7"),
@@ -32,7 +31,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertBotUserSchema = createInsertSchema(botUsers).pick({
   username: true,
-  discordId: true,
   apiKey: true,
   model: true,
   temperature: true,

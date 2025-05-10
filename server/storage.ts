@@ -8,7 +8,7 @@ export interface IStorage {
   
   // Bot user management
   getBotUser(id: number): Promise<BotUser | undefined>;
-  getBotUserByDiscordId(discordId: string): Promise<BotUser | undefined>;
+  getBotUserByUsername(username: string): Promise<BotUser | undefined>;
   getAllBotUsers(): Promise<BotUser[]>;
   createBotUser(botUser: InsertBotUser): Promise<BotUser>;
   updateBotUser(id: number, botUser: Partial<InsertBotUser>): Promise<BotUser | undefined>;
@@ -36,8 +36,7 @@ export class MemStorage implements IStorage {
     
     // Add some sample bot users
     this.createBotUser({
-      username: "John Doe",
-      discordId: "123456789012345678",
+      username: "JohnDoe",
       apiKey: "poppy-api-key-1",
       model: "poppy-v1",
       temperature: "0.7",
@@ -49,8 +48,7 @@ export class MemStorage implements IStorage {
     });
     
     this.createBotUser({
-      username: "Alice Smith",
-      discordId: "987654321098765432",
+      username: "AliceSmith",
       apiKey: "poppy-api-key-2",
       model: "poppy-v2",
       temperature: "0.5",
@@ -62,8 +60,7 @@ export class MemStorage implements IStorage {
     });
     
     this.createBotUser({
-      username: "Bob Johnson",
-      discordId: "456789012345678901",
+      username: "BobJohnson",
       apiKey: "poppy-api-key-3",
       model: "poppy-v1",
       temperature: "0.8",
@@ -98,9 +95,9 @@ export class MemStorage implements IStorage {
     return this.botUsers.get(id);
   }
   
-  async getBotUserByDiscordId(discordId: string): Promise<BotUser | undefined> {
+  async getBotUserByUsername(username: string): Promise<BotUser | undefined> {
     return Array.from(this.botUsers.values()).find(
-      (user) => user.discordId === discordId,
+      (user) => user.username === username,
     );
   }
   
