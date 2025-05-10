@@ -9,14 +9,20 @@ async function callPoppyAPI(prompt: string, userConfig: any) {
       throw new Error('API key not found for this user');
     }
 
-    const response = await fetch('https://api.poppy.ai/v1/completions', {
+    // Use board_id and chat_id from the user's configuration
+    const boardId = userConfig.boardId || "";
+    const chatId = userConfig.chatId || "";
+    const model = userConfig.model || "claude-3-7-sonnet-20250219";
+    
+    // Construct the URL with the user's configuration
+    const url = `https://api.getpoppy.ai/api/conversation?board_id=${boardId}&chat_id=${chatId}&model=${model}&api_key=${apiKey}`;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: userConfig.model || 'poppy-v1',
         prompt: prompt,
         temperature: parseFloat(userConfig.temperature) || 0.7,
         max_tokens: userConfig.maxTokens || 1024

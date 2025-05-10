@@ -145,7 +145,9 @@ export class FileSystemStorage implements IStorage {
           if (botUserData.id === id) {
             // Ensure all required fields have values
             const botUserWithDefaults = {
-              model: botUserData.model ?? "poppy-v1",
+              boardId: botUserData.boardId ?? "",
+              chatId: botUserData.chatId ?? "",
+              model: botUserData.model ?? "claude-3-7-sonnet-20250219",
               temperature: botUserData.temperature ?? "0.7",
               maxTokens: botUserData.maxTokens ?? 1024,
               isActive: botUserData.isActive ?? true,
@@ -172,7 +174,9 @@ export class FileSystemStorage implements IStorage {
         
         // Ensure all required fields have values
         const botUserWithDefaults = {
-          model: botUserData.model ?? "poppy-v1",
+          boardId: botUserData.boardId ?? "",
+          chatId: botUserData.chatId ?? "",
+          model: botUserData.model ?? "claude-3-7-sonnet-20250219",
           temperature: botUserData.temperature ?? "0.7",
           maxTokens: botUserData.maxTokens ?? 1024,
           isActive: botUserData.isActive ?? true,
@@ -202,7 +206,9 @@ export class FileSystemStorage implements IStorage {
           
           // Ensure all required fields have values
           const botUserWithDefaults = {
-            model: botUserData.model ?? "poppy-v1",
+            boardId: botUserData.boardId ?? "",
+            chatId: botUserData.chatId ?? "",
+            model: botUserData.model ?? "claude-3-7-sonnet-20250219",
             temperature: botUserData.temperature ?? "0.7",
             maxTokens: botUserData.maxTokens ?? 1024,
             isActive: botUserData.isActive ?? true,
