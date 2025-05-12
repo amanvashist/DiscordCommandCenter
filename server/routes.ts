@@ -25,11 +25,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "poppy-discord-bot-secret",
-      resave: false,
-      saveUninitialized: false,
+      resave: true, // Set to true to ensure session is saved on every request
+      saveUninitialized: true, // Set to true to create session object for all requests
       cookie: {
         secure: process.env.NODE_ENV === "production",
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        httpOnly: true
       },
       store: new MemoryStoreSession({
         checkPeriod: 86400000, // prune expired entries every 24h
@@ -69,10 +70,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Login route
   app.post("/api/auth/login", async (req, res) => {
     try {
+      console.log("Login attempt:", req.body);
       const credentials = loginSchema.parse(req.body);
       const user = await storage.getUserByUsername(credentials.username);
       
+      console.log("Found user:", user);
+      
       if (!user || user.password !== credentials.password) {
+        console.log("Invalid credentials");
         return res.status(401).json({ 
           success: false, 
           message: "Invalid username or password" 
@@ -80,9 +85,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ensure isAdmin is a boolean
-      const isAdmin = user.isAdmin === true;
+      console.log("Raw isAdmin value:", user.isAdmin, "type:", typeof user.isAdmin);
       
-      // Set session data
+      // Force isAdmin to boolean (explicit true check)
+      let isAdmin = false;
+      if (user.isAdmin === true) {
+        isAdmin = true;
+      } else if (typeof user.isAdmin === 'string' && user.isAdmin.toLowerCase() === 'true') {
+        isAdmin = true;
+      }
+      
+      console.log("Final isAdmin value:", isAdmin);
+      
+      // Direct method - set session values and respond
       req.session.authenticated = true;
       req.session.user = {
         id: user.id,
@@ -90,22 +105,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isAdmin: isAdmin
       };
       
-      // Save session explicitly to ensure it's stored before responding
-      req.session.save(err => {
+      console.log("Session data set:", {
+        authenticated: req.session.authenticated,
+        user: req.session.user
+      });
+      
+      req.session.save((err) => {
         if (err) {
-          console.error("Session save error:", err);
+          console.error("Error saving session:", err);
+        } else {
+          console.log("Session saved successfully");
         }
       });
       
-      res.json({ 
+      // Respond immediately
+      return res.json({ 
         success: true, 
         user: {
           id: user.id,
           username: user.username,
-          isAdmin: isAdmin ?? false
+          isAdmin: isAdmin
         }
       });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(400).json({ 
         success: false, 
         message: error instanceof Error ? error.message : "Invalid request" 

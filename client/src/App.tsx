@@ -12,24 +12,33 @@ import Header from "@/components/Header";
 import { checkAuthStatus } from "@/lib/auth";
 
 function App() {
+  // State and hooks
   const [location, setLocation] = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<{ username: string; isAdmin: boolean } | null>(null);
 
+  // Check authentication on component mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log("Checking auth status...");
         const authResult = await checkAuthStatus();
+        console.log("Auth result:", authResult);
+        
         setIsAuthenticated(authResult.success);
+        
         if (authResult.success && authResult.user) {
           setUserInfo({
             username: authResult.user.username,
             isAdmin: authResult.user.isAdmin
           });
+          console.log("User authenticated:", authResult.user);
+        } else {
+          console.log("Auth failed - no success or user");
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
+        console.error("Auth check error:", error);
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -39,6 +48,20 @@ function App() {
     checkAuth();
   }, []);
 
+  // Handle redirects when authentication state changes
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated && location !== "/login") {
+        console.log("Redirecting to login");
+        setLocation("/login");
+      } else if (isAuthenticated && location === "/login") {
+        console.log("Redirecting to home");
+        setLocation("/");
+      }
+    }
+  }, [isAuthenticated, isLoading, location, setLocation]);
+
+  // Show loading spinner while checking auth
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-discord-darkest">
@@ -47,15 +70,12 @@ function App() {
     );
   }
 
-  if (!isAuthenticated && location !== "/login") {
-    setLocation("/login");
-    return null;
-  }
-
+  // Render main app
   return (
     <TooltipProvider>
       <Toaster />
-      {isAuthenticated && location !== "/login" ? (
+      {isAuthenticated ? (
+        // Authenticated view with sidebar and header
         <div className="flex h-screen bg-discord-darkest text-white">
           <Sidebar />
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -67,26 +87,42 @@ function App() {
                 "Poppy Bot"
               }
               userInfo={userInfo}
-              onLogout={() => setIsAuthenticated(false)}
+              onLogout={() => {
+                setIsAuthenticated(false);
+                setUserInfo(null);
+              }}
             />
             <Switch>
               <Route path="/" component={Dashboard} />
-              <Route path="/users" component={UserConfig} />
+              <Route path="/users">
+                {userInfo?.isAdmin ? <UserConfig /> : <NotFound />}
+              </Route>
               <Route path="/commands" component={Commands} />
               <Route component={NotFound} />
             </Switch>
           </div>
         </div>
       ) : (
+        // Login view
         <Switch>
           <Route path="/login">
             <Login onLoginSuccess={(user) => {
+              console.log("Login success, setting auth state:", user);
               setIsAuthenticated(true);
               setUserInfo({
                 username: user.username,
                 isAdmin: user.isAdmin
               });
-              setLocation("/");
+            }} />
+          </Route>
+          <Route>
+            <Login onLoginSuccess={(user) => {
+              console.log("Login success from catchall route:", user);
+              setIsAuthenticated(true);
+              setUserInfo({
+                username: user.username,
+                isAdmin: user.isAdmin
+              });
             }} />
           </Route>
         </Switch>

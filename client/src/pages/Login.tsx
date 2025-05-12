@@ -29,17 +29,27 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     setIsLoading(true);
     
     try {
+      console.log("Attempting login with:", data.username);
       const response = await login(data);
       
       if (response.success && response.user) {
+        console.log("Login successful, user data:", response.user);
+        
         toast({
           title: "Login successful",
           description: `Welcome back, ${response.user.username}!`,
           variant: "default",
         });
         
+        // For admin users, log their status to verify
+        if (response.user.isAdmin) {
+          console.log("Admin user authenticated:", response.user.username);
+        }
+        
         onLoginSuccess(response.user);
       } else {
+        console.warn("Login response without success or user:", response);
+        
         toast({
           title: "Login failed",
           description: response.message || "Invalid credentials",
@@ -47,6 +57,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         });
       }
     } catch (error) {
+      console.error("Login submission error:", error);
+      
       toast({
         title: "Login error",
         description: error instanceof Error ? error.message : "An unexpected error occurred",

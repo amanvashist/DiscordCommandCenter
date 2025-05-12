@@ -98,13 +98,27 @@ export class FileSystemStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
       const filePath = path.join(this.usersDir, `${username}.json`);
+      console.log('Looking for user file:', filePath);
+      
       if (fs.existsSync(filePath)) {
-        const userData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        // Ensure all required fields are present
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        console.log('User file content:', fileContent);
+        
+        const userData = JSON.parse(fileContent);
+        console.log('Parsed user data:', userData);
+        
+        // Ensure all required fields are present with correct types
         if (userData.isAdmin === undefined) {
           userData.isAdmin = false;
+        } else if (typeof userData.isAdmin === 'string') {
+          // Convert string 'true'/'false' to boolean
+          userData.isAdmin = userData.isAdmin.toLowerCase() === 'true';
         }
+        
+        console.log('Normalized user data:', userData);
         return userData as User;
+      } else {
+        console.log('User file not found');
       }
     } catch (error) {
       console.error('Error getting user by username:', error);
