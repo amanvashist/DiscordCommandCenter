@@ -87,13 +87,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ensure isAdmin is a boolean
       console.log("Raw isAdmin value:", user.isAdmin, "type:", typeof user.isAdmin);
       
-      // Force isAdmin to boolean (explicit true check)
-      let isAdmin = false;
-      if (user.isAdmin === true) {
-        isAdmin = true;
-      } else if (typeof user.isAdmin === 'string' && user.isAdmin.toLowerCase() === 'true') {
-        isAdmin = true;
-      }
+      // Normalize isAdmin value to boolean
+      const isAdmin = (() => {
+        // If it's explicitly a boolean true
+        if (user.isAdmin === true) {
+          return true;
+        }
+        
+        // If it's a string 'true' (case insensitive)
+        if (typeof user.isAdmin === 'string') {
+          return user.isAdmin.toLowerCase() === 'true';
+        }
+        
+        // Default to false for all other values
+        return false;
+      })();
       
       console.log("Final isAdmin value:", isAdmin);
       
@@ -148,20 +156,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Check authentication status
   app.get("/api/auth/status", (req, res) => {
-    console.log("Auth status check:", {
-      session: req.session,
-      sessionID: req.sessionID,
-      authenticated: req.session.authenticated,
-      user: req.session.user
+    console.log("Auth status check request received");
+    console.log("Session ID:", req.sessionID);
+    console.log("Cookie:", req.headers.cookie);
+    
+    // For security reasons, log only necessary session info
+    console.log("Auth status:", {
+      authenticated: !!req.session.authenticated,
+      hasUser: !!req.session.user,
+      username: req.session.user?.username
     });
     
-    if (req.session.authenticated && req.session.user) {
-      res.json({ 
+    if (req.session.authenticated === true && req.session.user) {
+      console.log("User is authenticated, sending success response");
+      return res.json({ 
         success: true, 
-        user: req.session.user
+        user: {
+          id: req.session.user.id,
+          username: req.session.user.username,
+          isAdmin: !!req.session.user.isAdmin
+        }
       });
     } else {
-      res.json({ success: false });
+      console.log("User is not authenticated");
+      return res.json({ success: false });
     }
   });
   
