@@ -1,0 +1,14 @@
+{
+  "boardId": "",
+  "chatId": "",
+  "model": "claude-3-7-sonnet-20250219",
+  "temperature": "0.6",
+  "maxTokens": 1024,
+  "isActive": true,
+  "role": "User",
+  "canUseAsk": true,
+  "canUseSummary": true,
+  "username": "amanvashist007",
+  "apiKey": "gp_Witty_Yak_C8O00tIp1gW6sEwTF0WYjJheKjh1",
+  "id": 2
+}

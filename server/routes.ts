@@ -39,10 +39,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication middleware
   const requireAuth = (req: Request, res: Response, next: Function) => {
-    if (req.session.authenticated) {
+    if (req.session.authenticated && req.session.user) {
       next();
     } else {
       res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+  };
+  
+  // Admin middleware
+  const requireAdmin = (req: Request, res: Response, next: Function) => {
+    if (req.session.authenticated && req.session.user && req.session.user.isAdmin) {
+      next();
+    } else {
+      res.status(403).json({ success: false, message: "Admin access required" });
     }
   };
   
@@ -105,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all bot users
-  app.get("/api/bot-users", requireAuth, async (req, res) => {
+  app.get("/api/bot-users", requireAdmin, async (req, res) => {
     try {
       const botUsers = await storage.getAllBotUsers();
       res.json(botUsers);
@@ -118,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get a specific bot user
-  app.get("/api/bot-users/:id", requireAuth, async (req, res) => {
+  app.get("/api/bot-users/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -140,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create a bot user
-  app.post("/api/bot-users", requireAuth, async (req, res) => {
+  app.post("/api/bot-users", requireAdmin, async (req, res) => {
     try {
       const botUserData = insertBotUserSchema.parse(req.body);
       
