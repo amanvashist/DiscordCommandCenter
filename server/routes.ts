@@ -39,6 +39,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication middleware
   const requireAuth = (req: Request, res: Response, next: Function) => {
+    console.log("Auth check:", {
+      authenticated: req.session.authenticated,
+      user: req.session.user
+    });
+    
     if (req.session.authenticated && req.session.user) {
       next();
     } else {
@@ -48,7 +53,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin middleware
   const requireAdmin = (req: Request, res: Response, next: Function) => {
-    if (req.session.authenticated && req.session.user && req.session.user.isAdmin) {
+    console.log("Admin check:", {
+      authenticated: req.session.authenticated,
+      user: req.session.user,
+      isAdmin: req.session.user?.isAdmin
+    });
+    
+    if (req.session.authenticated && req.session.user && req.session.user.isAdmin === true) {
       next();
     } else {
       res.status(403).json({ success: false, message: "Admin access required" });
@@ -68,19 +79,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Ensure isAdmin is a boolean
+      const isAdmin = user.isAdmin === true;
+      
+      // Set session data
       req.session.authenticated = true;
       req.session.user = {
         id: user.id,
         username: user.username,
-        isAdmin: user.isAdmin ?? false
+        isAdmin: isAdmin
       };
+      
+      // Save session explicitly to ensure it's stored before responding
+      req.session.save(err => {
+        if (err) {
+          console.error("Session save error:", err);
+        }
+      });
       
       res.json({ 
         success: true, 
         user: {
           id: user.id,
           username: user.username,
-          isAdmin: user.isAdmin ?? false
+          isAdmin: isAdmin ?? false
         }
       });
     } catch (error) {
@@ -103,6 +125,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Check authentication status
   app.get("/api/auth/status", (req, res) => {
+    console.log("Auth status check:", {
+      session: req.session,
+      sessionID: req.sessionID,
+      authenticated: req.session.authenticated,
+      user: req.session.user
+    });
+    
     if (req.session.authenticated && req.session.user) {
       res.json({ 
         success: true, 
@@ -173,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update a bot user
-  app.put("/api/bot-users/:id", requireAuth, async (req, res) => {
+  app.put("/api/bot-users/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -209,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete a bot user
-  app.delete("/api/bot-users/:id", requireAuth, async (req, res) => {
+  app.delete("/api/bot-users/:id", requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
