@@ -44,26 +44,36 @@ export class FileSystemStorage implements IStorage {
       // Check if admin user exists
       const adminUserPath = path.join(this.usersDir, 'admin.json');
       
+      // Get admin username/password from environment variables or use defaults
+      const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+      const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+      
+      // Use environment variables with fallback to file-based storage
       if (!fs.existsSync(adminUserPath)) {
-        console.log('Admin user not found. Creating default admin user...');
+        console.log('Admin user not found. Creating admin user...');
         
         // Create admin user
         const adminUser: User = {
           id: 1,
-          username: 'admin',
-          password: 'admin123',
+          username: adminUsername,
+          password: adminPassword,
           isAdmin: true
         };
         
-        fs.writeFileSync(adminUserPath, JSON.stringify(adminUser, null, 2));
-        console.log('Default admin user created successfully.');
+        // Try to write the file, but don't fail if filesystem is not writable
+        try {
+          fs.writeFileSync(adminUserPath, JSON.stringify(adminUser, null, 2));
+          console.log('Admin user file created successfully.');
+        } catch (writeError) {
+          console.warn('Could not write admin user file. Using in-memory admin.', writeError);
+        }
         
         // Ensure counter is set correctly
         if (this.userIdCounter <= 1) {
           this.userIdCounter = 2;
         }
       } else {
-        console.log('Admin user exists, no need to create default.');
+        console.log('Admin user file exists.');
       }
     } catch (error) {
       console.error('Error ensuring admin user:', error);
@@ -77,34 +87,57 @@ export class FileSystemStorage implements IStorage {
   }
 
   private initializeCounters(): void {
+    // Always ensure admin's ID is 1, and next user ID is at least 2
+    this.userIdCounter = 2;
+    
     // Find the highest ID for users
     try {
-      const userFiles = fs.readdirSync(this.usersDir);
-      for (const file of userFiles) {
-        if (file.endsWith('.json')) {
-          const filePath = path.join(this.usersDir, file);
-          const userData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-          if (userData.id && userData.id >= this.userIdCounter) {
-            this.userIdCounter = userData.id + 1;
+      console.log('Initializing user ID counter');
+      if (fs.existsSync(this.usersDir)) {
+        const userFiles = fs.readdirSync(this.usersDir);
+        for (const file of userFiles) {
+          if (file.endsWith('.json')) {
+            try {
+              const filePath = path.join(this.usersDir, file);
+              const userData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+              if (userData.id && userData.id >= this.userIdCounter) {
+                this.userIdCounter = userData.id + 1;
+              }
+            } catch (parseError) {
+              console.error(`Error parsing user file ${file}:`, parseError);
+            }
           }
         }
+      } else {
+        console.log('Users directory does not exist yet');
       }
+      console.log(`User ID counter set to ${this.userIdCounter}`);
     } catch (error) {
       console.error('Error initializing user ID counter:', error);
     }
 
     // Find the highest ID for bot users
     try {
-      const botUserFiles = fs.readdirSync(this.botUsersDir);
-      for (const file of botUserFiles) {
-        if (file.endsWith('.json')) {
-          const filePath = path.join(this.botUsersDir, file);
-          const botUserData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-          if (botUserData.id && botUserData.id >= this.botUserIdCounter) {
-            this.botUserIdCounter = botUserData.id + 1;
+      console.log('Initializing bot user ID counter');
+      if (fs.existsSync(this.botUsersDir)) {
+        const botUserFiles = fs.readdirSync(this.botUsersDir);
+        for (const file of botUserFiles) {
+          if (file.endsWith('.json')) {
+            try {
+              const filePath = path.join(this.botUsersDir, file);
+              const botUserData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+              if (botUserData.id && botUserData.id >= this.botUserIdCounter) {
+                this.botUserIdCounter = botUserData.id + 1;
+              }
+            } catch (parseError) {
+              console.error(`Error parsing bot user file ${file}:`, parseError);
+            }
           }
         }
+      } else {
+        console.log('Bot users directory does not exist yet');
       }
+      console.log(`Bot user ID counter set to ${this.botUserIdCounter}`);
     } catch (error) {
       console.error('Error initializing bot user ID counter:', error);
     }
@@ -113,6 +146,35 @@ export class FileSystemStorage implements IStorage {
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     try {
+      // Special case for admin user (always has id 1)
+      if (id === 1) {
+        console.log('Looking up admin user by ID 1');
+        const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+        
+        // First try to get from file system
+        try {
+          const adminFilePath = path.join(this.usersDir, `${adminUsername}.json`);
+          if (fs.existsSync(adminFilePath)) {
+            console.log('Found admin user file');
+            const userData = JSON.parse(fs.readFileSync(adminFilePath, 'utf8'));
+            return userData as User;
+          }
+        } catch (fileError) {
+          console.log('Admin file not readable, using fallback');
+        }
+        
+        // Fallback to environment variables or default for admin
+        console.log('Using in-memory admin user');
+        return {
+          id: 1,
+          username: adminUsername,
+          password: process.env.ADMIN_PASSWORD || 'admin123',
+          isAdmin: true
+        };
+      }
+      
+      // For other users, search through files
+      console.log(`Looking for user with ID: ${id}`);
       const userFiles = fs.readdirSync(this.usersDir);
       for (const file of userFiles) {
         if (file.endsWith('.json')) {
@@ -127,6 +189,7 @@ export class FileSystemStorage implements IStorage {
           }
         }
       }
+      console.log(`No user found with ID: ${id}`);
     } catch (error) {
       console.error('Error getting user by ID:', error);
     }
@@ -135,6 +198,23 @@ export class FileSystemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
+      // Special case for admin user if using environment variables
+      const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+      
+      // If we're checking for admin and ADMIN_PASSWORD exists, we can use the env var directly
+      if (username === adminUsername && process.env.ADMIN_PASSWORD) {
+        console.log('Using environment variable admin credentials');
+        
+        // Return in-memory admin user
+        return {
+          id: 1,
+          username: adminUsername,
+          password: process.env.ADMIN_PASSWORD,
+          isAdmin: true
+        };
+      }
+      
+      // Try to fetch from file system
       const filePath = path.join(this.usersDir, `${username}.json`);
       console.log('Looking for user file:', filePath);
       
@@ -157,6 +237,18 @@ export class FileSystemStorage implements IStorage {
         return userData as User;
       } else {
         console.log('User file not found');
+        
+        // If this is the admin user, create an in-memory version even if file doesn't exist
+        // This is specifically to support ephemeral file systems like Render
+        if (username === adminUsername) {
+          console.log('Creating in-memory admin user');
+          return {
+            id: 1,
+            username: adminUsername,
+            password: process.env.ADMIN_PASSWORD || 'admin123',
+            isAdmin: true
+          };
+        }
       }
     } catch (error) {
       console.error('Error getting user by username:', error);
