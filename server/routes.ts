@@ -52,16 +52,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
   
-  // Admin middleware
+  // Admin middleware - simplified for Render compatibility
   const requireAdmin = (req: Request, res: Response, next: Function) => {
     console.log("Admin check:", {
       authenticated: req.session.authenticated,
       user: req.session.user,
       isAdmin: req.session.user?.isAdmin,
-      isAdminType: typeof req.session.user?.isAdmin
+      env: {
+        adminUsername: process.env.ADMIN_USERNAME || 'admin',
+        nodeEnv: process.env.NODE_ENV
+      }
     });
     
-    // Accept any truthy value for isAdmin
+    // DIRECT FIX: If username matches ADMIN_USERNAME env var, grant admin access
+    // This is specifically for Render deployment where file storage might be ephemeral
+    if (process.env.ADMIN_USERNAME && 
+        req.session.authenticated && 
+        req.session.user && 
+        req.session.user.username === process.env.ADMIN_USERNAME) {
+      console.log("Admin access granted via environment variable override");
+      
+      // Force-set isAdmin to true in the session
+      if (!req.session.user.isAdmin) {
+        req.session.user.isAdmin = true;
+        req.session.save();
+      }
+      
+      next();
+      return;
+    }
+    
+    // Standard admin check
     if (req.session.authenticated && req.session.user) {
       // Check all possible ways isAdmin could be true
       const isAdminValue = req.session.user.isAdmin;
@@ -71,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Boolean true
         isAdminValue === true || 
         // String 'true'
-        (typeof isAdminValue === 'string' && isAdminValue.toLowerCase() === 'true') ||
+        (typeof isAdminValue === 'string' && (isAdminValue as string).toLowerCase() === 'true') ||
         // Number 1 
         (typeof isAdminValue === 'number' && isAdminValue === 1) ||
         // String '1'
@@ -93,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Login attempt:", req.body);
       const credentials = loginSchema.parse(req.body);
-      const user = await storage.getUserByUsername(credentials.username);
+      let user = await storage.getUserByUsername(credentials.username);
       
       console.log("Found user:", user);
       
@@ -105,11 +126,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // RENDER FIX: Special case for env-defined admin
+      const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+      if (credentials.username === adminUsername) {
+        console.log("Admin user login detected");
+        // Force admin rights for the admin user (important for Render)
+        user.isAdmin = true;
+      }
+      
       // Ensure isAdmin is a boolean
       console.log("Raw isAdmin value:", user.isAdmin, "type:", typeof user.isAdmin);
       
       // Normalize isAdmin value to boolean
       const isAdmin = (() => {
+        // Special case for admin username (from env)
+        if (user.username === adminUsername) {
+          return true;
+        }
+        
         // If it's explicitly a boolean true
         if (user.isAdmin === true) {
           return true;
@@ -117,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // If it's a string 'true' (case insensitive)
         if (typeof user.isAdmin === 'string') {
-          return user.isAdmin.toLowerCase() === 'true';
+          return (user.isAdmin as string).toLowerCase() === 'true';
         }
         
         // Default to false for all other values
@@ -163,6 +197,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: error instanceof Error ? error.message : "Invalid request" 
       });
     }
+  });
+  
+  // TEMPORARY: Direct admin access route for Render deployment
+  app.post("/api/auth/admin-login", async (req, res) => {
+    console.log("Direct admin login attempted");
+    
+    // Only allow in production or if ADMIN_PASSWORD is set
+    if (process.env.NODE_ENV !== 'production' && !process.env.ADMIN_PASSWORD) {
+      return res.status(403).json({ 
+        success: false,
+        message: "This endpoint is only available in production"
+      });
+    }
+    
+    // Check password if provided
+    if (process.env.ADMIN_PASSWORD && 
+        (!req.body.password || req.body.password !== process.env.ADMIN_PASSWORD)) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid admin password"
+      });
+    }
+    
+    // Set session data with admin privileges
+    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+    req.session.authenticated = true;
+    req.session.user = {
+      id: 1,
+      username: adminUsername,
+      isAdmin: true
+    };
+    
+    console.log("Direct admin access granted, setting session:", req.session);
+    
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).json({ success: false, message: "Session error" });
+      }
+      
+      res.json({ 
+        success: true, 
+        user: {
+          id: 1,
+          username: adminUsername,
+          isAdmin: true
+        }
+      });
+    });
   });
   
   // Logout route
