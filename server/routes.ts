@@ -57,14 +57,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("Admin check:", {
       authenticated: req.session.authenticated,
       user: req.session.user,
-      isAdmin: req.session.user?.isAdmin
+      isAdmin: req.session.user?.isAdmin,
+      isAdminType: typeof req.session.user?.isAdmin
     });
     
-    if (req.session.authenticated && req.session.user && req.session.user.isAdmin === true) {
-      next();
-    } else {
-      res.status(403).json({ success: false, message: "Admin access required" });
+    // Accept any truthy value for isAdmin
+    if (req.session.authenticated && req.session.user) {
+      // Check all possible ways isAdmin could be true
+      const isAdminValue = req.session.user.isAdmin;
+      
+      // Using a more type-safe approach
+      const isAdmin = 
+        // Boolean true
+        isAdminValue === true || 
+        // String 'true'
+        (typeof isAdminValue === 'string' && isAdminValue.toLowerCase() === 'true') ||
+        // Number 1 
+        (typeof isAdminValue === 'number' && isAdminValue === 1) ||
+        // String '1'
+        (typeof isAdminValue === 'string' && isAdminValue === '1');
+      
+      if (isAdmin) {
+        console.log("Admin access granted");
+        next();
+        return;
+      }
     }
+    
+    console.log("Admin access denied");
+    res.status(403).json({ success: false, message: "Admin access required" });
   };
   
   // Login route

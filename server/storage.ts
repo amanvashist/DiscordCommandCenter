@@ -30,6 +30,44 @@ export class FileSystemStorage implements IStorage {
     
     // Initialize ID counters based on existing files
     this.initializeCounters();
+    
+    // Always ensure admin user exists (critical for deployment environments)
+    this.ensureAdminUser();
+  }
+  
+  /**
+   * Ensures that an admin user exists in the system
+   * This is essential for deployment environments where the file system may be temporary
+   */
+  private async ensureAdminUser(): Promise<void> {
+    try {
+      // Check if admin user exists
+      const adminUserPath = path.join(this.usersDir, 'admin.json');
+      
+      if (!fs.existsSync(adminUserPath)) {
+        console.log('Admin user not found. Creating default admin user...');
+        
+        // Create admin user
+        const adminUser: User = {
+          id: 1,
+          username: 'admin',
+          password: 'admin123',
+          isAdmin: true
+        };
+        
+        fs.writeFileSync(adminUserPath, JSON.stringify(adminUser, null, 2));
+        console.log('Default admin user created successfully.');
+        
+        // Ensure counter is set correctly
+        if (this.userIdCounter <= 1) {
+          this.userIdCounter = 2;
+        }
+      } else {
+        console.log('Admin user exists, no need to create default.');
+      }
+    } catch (error) {
+      console.error('Error ensuring admin user:', error);
+    }
   }
 
   private ensureDirectoryExists(dir: string): void {
